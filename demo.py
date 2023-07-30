@@ -41,7 +41,7 @@ if __name__ == '__main__':
     model = load_network()
     image_path = './demo/'
     output_txt = './demo/predictions.txt'
-    image_list = os.listdir(image_path)     #返回指定的image_path 文件夹包含的文件或文件夹名字列表
+    image_list = os.listdir(image_path)     #返回指定的image_path 文件夹包含的文件或文件夹名字列表,这是一段测试提交的注释
     img_width = 256                         #定义图像长宽
     img_height = 64                         
     transf = transforms.ToTensor()          #将原始的PILImage格式或numpy.array格式的数据格式化为可被pytorch快速处理的张量类型，函数指针？
