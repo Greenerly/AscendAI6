@@ -1,0 +1,9 @@
+1.png:residencia
+2.png:wishing
+3.png:house
+1.png:residencia
+2.png:wishing
+3.png:house
+1.png:residencia
+2.png:wishing
+3.png:house
