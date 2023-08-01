@@ -7,6 +7,7 @@ from torch.nn.parameter import Parameter
 from modules.modules import Transforme_Encoder, Prediction, Transforme_Encoder_light
 import torchvision
 import modules.resnet as resnet
+import mindspore.nn as nn
 
 
 class MLM(nn.Module):
@@ -15,32 +16,32 @@ class MLM(nn.Module):
     '''
     def __init__(self, n_dim=512):
         super(MLM, self).__init__()
-        self.MLM_SequenceModeling_mask = Transforme_Encoder(n_layers=2, n_position=256)
-        self.MLM_SequenceModeling_WCL = Transforme_Encoder(n_layers=1, n_position=256)
-        self.pos_embedding = nn.Embedding(25, 512)
-        self.w0_linear = nn.Linear(1, 256)
-        self.wv = nn.Linear(n_dim, n_dim)
-        self.active = nn.Tanh()
-        self.we = nn.Linear(n_dim, 1)
-        self.sigmoid = nn.Sigmoid()
+        self.MLM_SequenceModeling_mask = Transforme_Encoder(n_layers=2, n_position=256)     #函数内部还未修改
+        self.MLM_SequenceModeling_WCL = Transforme_Encoder(n_layers=1, n_position=256)      #函数内部还未修改
+        self.pos_embedding = nn.Embedding(25, 512)  # 一致
+        self.w0_linear = nn.Dense(1, 256)   #一致
+        self.wv = nn.Dense(n_dim, n_dim)    #一致
+        self.active = nn.Tanh()             #一致
+        self.we = nn.Dense(n_dim, 1)
+        self.sigmoid = nn.Sigmoid()         #一致
 
     def forward(self, input, label_pos, state=False):
         # transformer unit for generating mask_c
-        feature_v_seq = self.MLM_SequenceModeling_mask(input, src_mask=None)[0]
+        feature_v_seq = self.MLM_SequenceModeling_mask(input, src_mask=None)[0]         #函数调用 未修改
         # position embedding layer
-        pos_emb = self.pos_embedding(label_pos.long())
-        pos_emb = self.w0_linear(torch.unsqueeze(pos_emb, dim=2)).permute(0, 2, 1)
+        pos_emb = self.pos_embedding(label_pos.long())          #函数调用，修改完成
+        pos_emb = self.w0_linear(torch.unsqueeze(pos_emb, dim=2)).permute(0, 2, 1)      #修改完成
         # fusion position embedding with features V & generate mask_c
-        att_map_sub = self.active(pos_emb + self.wv(feature_v_seq))
-        att_map_sub = self.we(att_map_sub)  # b,256,1
-        att_map_sub = self.sigmoid(att_map_sub.permute(0, 2, 1))  # b,1,256
+        att_map_sub = self.active(pos_emb + self.wv(feature_v_seq))                     #修改完成
+        att_map_sub = self.we(att_map_sub)  # b,256,1                                   #修改完成
+        att_map_sub = self.sigmoid(att_map_sub.permute(0, 2, 1))  # b,1,256             #修改完成
         # WCL
         ## generate inputs for WCL
-        f_res = input * (1 - att_map_sub.permute(0, 2, 1)) # second path with remaining string
-        f_sub = input * (att_map_sub.permute(0, 2, 1)) # first path with occluded character
+        f_res = input * (1 - att_map_sub.permute(0, 2, 1)) # second path with remaining string      #数据调用
+        f_sub = input * (att_map_sub.permute(0, 2, 1)) # first path with occluded character 
         ## transformer units in WCL
-        f_res = self.MLM_SequenceModeling_WCL(f_res, src_mask=None)[0]
-        f_sub = self.MLM_SequenceModeling_WCL(f_sub, src_mask=None)[0]
+        f_res = self.MLM_SequenceModeling_WCL(f_res, src_mask=None)[0]                  #函数内部未修改
+        f_sub = self.MLM_SequenceModeling_WCL(f_sub, src_mask=None)[0]                  #函数内部未修改
         return f_res, f_sub, att_map_sub
 
 def trans_1d_2d(x):

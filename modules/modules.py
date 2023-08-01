@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 from torch.nn.parameter import Parameter
+import mindspore.nn as nn
 class PositionalEncoding(nn.Module):
     def __init__(self, d_hid, n_position=200):
         super(PositionalEncoding, self).__init__()
@@ -114,7 +115,7 @@ class Transforme_Encoder(nn.Module):
         super(Transforme_Encoder,self).__init__()
         self.position_enc = PositionalEncoding(d_word_vec, n_position=n_position)
         self.dropout = nn.Dropout(p=dropout)
-        self.layer_stack = nn.ModuleList([
+        self.layer_stack = nn.CellList([
             EncoderLayer(d_model, d_inner, n_head, d_k, d_v, dropout=dropout)
             for _ in range(n_layers)])
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
