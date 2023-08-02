@@ -166,3 +166,7 @@ class VisionLAN(nn.Module):
         else:
             output, out_length = self.MLM_VRM(features[-1], label_pos, training_stp, is_Train=Train_in)
             return output, out_length
+
+
+
+            ###1235654
