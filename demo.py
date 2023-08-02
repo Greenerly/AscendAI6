@@ -37,7 +37,7 @@ def load_network():
 
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':# gaile
     model = load_network()
     image_path = './demo/'
     output_txt = './demo/predictions.txt'
