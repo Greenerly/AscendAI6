@@ -1,9 +1,11 @@
 # coding:utf-8
 import random
-import torch
-from torch.utils.data import Dataset
-from torch.utils.data import sampler
-import torchvision.transforms as transforms
+# import torch
+# from torch.utils.data import Dataset
+# from torch.utils.data import sampler
+# import torchvision.transforms as transforms
+from mindspore.dataset.transforms import Compose
+import mindspore.dataset.vision as vision
 import lmdb
 import six
 import sys
@@ -70,11 +72,17 @@ class lmdbDataset(Dataset):
         self.target_ratio = img_width / float(img_width)
         self.min_size = (img_width * 0.5, img_width * 0.75, img_width)
 
-        self.augment_tfs = transforms.Compose([
+        # self.augment_tfs = transforms.Compose([
+        #     CVGeometry(degrees=45, translate=(0.0, 0.0), scale=(0.5, 2.), shear=(45, 15), distortion=0.5, p=0.5),
+        #     CVDeterioration(var=20, degrees=6, factor=4, p=0.25),
+        #     CVColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.1, p=0.25)
+        # ])
+        self.augment_tfs = Compose([
             CVGeometry(degrees=45, translate=(0.0, 0.0), scale=(0.5, 2.), shear=(45, 15), distortion=0.5, p=0.5),
             CVDeterioration(var=20, degrees=6, factor=4, p=0.25),
             CVColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.1, p=0.25)
         ])
+
     def __fromwhich__(self ):
         rd = random.random()
         total = 0
@@ -86,7 +94,8 @@ class lmdbDataset(Dataset):
         if is_train == 'Train':
             img = self.augment_tfs(img)
         img = cv2.resize(np.array(img), (self.img_width, self.img_height))
-        img = transforms.ToPILImage()(img)
+        # img = transforms.ToPILImage()(img)
+        img = vision.ToPIL()(img)
         return img
 
     def __len__(self):

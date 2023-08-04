@@ -1,9 +1,8 @@
 # coding:utf-8
-import torch
-import torch.optim as optim
 import os
 from data.dataset_scene_vis import *
-from torchvision import transforms
+from mindspore.dataset import transforms
+from mindspore.dataset import vision
 from VisionLAN import *
 
 global_cfgs = {
@@ -22,7 +21,7 @@ dataset_cfgs = {
         ],
         'img_height': 64,
         'img_width': 256,
-        'transform': transforms.Compose([transforms.ToTensor()]),
+        'transform': transforms.Compose([vision.ToTensor()]),
         'global_state': 'Train',
         'mask_id': 6 # 1 2 or n
     },
@@ -40,7 +39,7 @@ dataset_cfgs = {
         ],
         'img_height': 64,
         'img_width': 256,
-        'transform': transforms.Compose([transforms.ToTensor()]),
+        'transform': transforms.Compose([vision.ToTensor()]),
         'global_state': 'Test',
     },
 
