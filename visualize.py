@@ -1,6 +1,7 @@
 # coding:utf-8
 from __future__ import print_function
 import torch
+import mindspore
 from torch.utils.data import Dataset, DataLoader
 from utils import *
 import cfgs.cfgs_visualize as cfgs
@@ -14,8 +15,14 @@ def flatten_label(target):
         cur_label = target[i].tolist()
         label_flatten += cur_label[:cur_label.index(0) + 1]
         label_length.append(cur_label.index(0) + 1)
-    label_flatten = torch.LongTensor(label_flatten)
-    label_length = torch.IntTensor(label_length)
+
+    # label_flatten此时应该为numpy数组，才能进行LongTensor转换
+    # 原：label_flatten = torch.LongTensor(label_flatten)   
+    label_flatten = mindspore.Tensor(label_flatten, mindspore.int64)
+
+    # 原：label_length = torch.IntTensor(label_length)
+    label_length = mindspore.Tensor(label_length, mindspore.int32)
+
     return (label_flatten, label_length)
 
 def Train_or_Eval(model, state='Train'):
@@ -27,6 +34,7 @@ def Train_or_Eval(model, state='Train'):
 def Zero_Grad(model):
     model.zero_grad()
 
+# mindspore没有dataloader！！！！怎么改？！
 def load_dataset():
     train_data_set = cfgs.dataset_cfgs['dataset_train'](**cfgs.dataset_cfgs['dataset_train_args'])
     train_loader = DataLoader(train_data_set, **cfgs.dataset_cfgs['dataloader_train'])
@@ -35,12 +43,26 @@ def load_dataset():
     return train_loader, test_loader
 
 def load_network():
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model_VL = cfgs.net_cfgs['VisualLAN'](**cfgs.net_cfgs['args'])
-    model_VL = model_VL.to(device)
-    model_VL = torch.nn.DataParallel(model_VL)
+    # 原：device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    # 这样对吗？device = ms.set_context(device_target="Ascend")  
+    # 我看到官方文档有的实例这样写：
+    device_target="Ascend"
+    mindspore.set_context(device_target=device_target)
+
+    model_VL = cfgs.net_cfgs['VisualLAN'](**cfgs.net_cfgs['args'])  # 这一句话在torch下，就相当于加载好模型了
+
+    # model_VL = model_VL.to(device)
+
+    # model_VL = torch.nn.DataParallel(model_VL)
+    # 上面那句源码是并行运行的意思，mindspore关于并行运行有介绍：https://www.mindspore.cn/tutorial/zh-CN/r0.6/advanced_use/distributed_training_ascend.html#id3
+    # 再看这个实例：https://mindspore.cn/tutorials/application/zh-CN/r2.0/cv/fcn8s.html#%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83
+
+
     if cfgs.net_cfgs['init_state_dict'] != None:
-        fe_state_dict_ori = torch.load(cfgs.net_cfgs['init_state_dict'])
+        # fe_state_dict_ori = torch.load(cfgs.net_cfgs['init_state_dict'])
+        fe_state_dict_ori = mindspore.load_checkpoint(cfgs.net_cfgs['init_state_dict'])
+
         fe_state_dict = OrderedDict()
         for k, v in fe_state_dict_ori.items():
             if 'module' not in k:
@@ -48,7 +70,8 @@ def load_network():
             else:
                 k = k.replace('features.module.', 'module.features.')
             fe_state_dict[k] = v
-        model_dict_fe = model_VL.state_dict()
+
+        model_dict_fe = model_VL.state_dict()  # 用于查看网络参数 
         state_dict_fe = {k: v for k, v in fe_state_dict.items() if k in model_dict_fe.keys()}
         model_dict_fe.update(state_dict_fe)
         model_VL.load_state_dict(model_dict_fe)

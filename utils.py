@@ -1,7 +1,9 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
+# import torch
+import mindspore
+import mindspore.ops as ops
+# import torch.nn as nn
+# import torch.nn.functional as F
+# from torch.autograd import Variable
 import numpy as np
 import cv2
 import json
@@ -17,25 +19,38 @@ class cha_encdec():
 
     def encode(self, label_batch):
         max_len = max([len(s) for s in label_batch])
-        out = torch.zeros(len(label_batch), max_len+1).long()
+        # 原：out = torch.zeros(len(label_batch), max_len+1).long()
+        out = mindspore.ops.Zeros((len(label_batch), max_len+1), mindspore.int64)
+
         for i in range(0, len(label_batch)):
             if not self.case_sensitive:
-                cur_encoded = torch.tensor([self.dict.index(char.lower()) if char.lower() in self.dict else len(self.dict)
+                # 没细看参数列表，直接把torch.tensor改了
+                cur_encoded = mindspore.Tensor([self.dict.index(char.lower()) if char.lower() in self.dict else len(self.dict)
                                      for char in label_batch[i]]) + 1
             else:
-                cur_encoded = torch.tensor([self.dict.index(char) if char in self.dict else len(self.dict)
+                cur_encoded = mindspore.Tensor([self.dict.index(char) if char in self.dict else len(self.dict)
                                      for char in label_batch[i]]) + 1
             out[i][0:len(cur_encoded)] = cur_encoded
         return out
+
     def decode(self, net_out, length):
         out = []
         out_prob = [] 
-        net_out = F.softmax(net_out, dim = 1)
+        
+        # 注意：传入的net_out一定得是ms.Tensor型，而且还的是ms.float32，如果是float64还报错了，打个预防针吧
+        net_out = net_out.astype(mindspore.float32) 
+        # 原：net_out = F.softmax(net_out, dim = 1)
+        softmax = ops.Softmax(axis = 1)
+        net_out = softmax(net_out)
+
         for i in range(0, length.shape[0]):
             current_idx_list = net_out[int(length[:i].sum()) : int(length[:i].sum() + length[i])].topk(1)[1][:,0].tolist()
             current_text = ''.join([self.dict[_-1] if _ > 0 and _ <= len(self.dict) else '' for _ in current_idx_list])
             current_probability = net_out[int(length[:i].sum()) : int(length[:i].sum() + length[i])].topk(1)[0][:,0]
-            current_probability = torch.exp(torch.log(current_probability).sum() / current_probability.size()[0])
+
+            # current_probability = torch.exp(torch.log(current_probability).sum() / current_probability.size()[0])
+            current_probability = ops.Exp(ops.Log(current_probability).sum() / current_probability.size()[0])
+
             out.append(current_text)
             out_prob.append(current_probability)
         return (out, out_prob)

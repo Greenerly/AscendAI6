@@ -1,9 +1,9 @@
 # coding:utf-8
-import torch
-import torch.optim as optim
+import mindspore.nn as nn
 import os
 from data.dataset_scene import *
-from torchvision import transforms
+from mindspore.dataset import transforms
+from mindspore.dataset import vision
 from VisionLAN import *
 
 global_cfgs = {
@@ -22,7 +22,7 @@ dataset_cfgs = {
         ],
         'img_height': 64,
         'img_width': 256,
-        'transform': transforms.Compose([transforms.ToTensor()]),
+        'transform': transforms.Compose([vision.ToTensor()]),
         'global_state': 'Train',
     },
     'dataloader_train': {
@@ -39,7 +39,7 @@ dataset_cfgs = {
         ],
         'img_height': 64,
         'img_width': 256,
-        'transform': transforms.Compose([transforms.ToTensor()]),
+        'transform': transforms.Compose([vision.ToTensor()]),
         'global_state': 'Test',
     },
 
@@ -63,11 +63,11 @@ net_cfgs = {
     'init_state_dict': './output/LF_1/best_acc_M.pth',
 }
 optimizer_cfgs = {
-    'optimizer_0': optim.Adam,
+    'optimizer_0': nn.Adam,
     'optimizer_0_args':{
         'lr': 0.0001,
     },
-    'optimizer_0_scheduler': optim.lr_scheduler.MultiStepLR,
+    'optimizer_0_scheduler': nn.piecewise_constant_lr,
     'optimizer_0_scheduler_args': {
         'milestones': [2],
         'gamma': 0.1,

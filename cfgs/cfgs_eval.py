@@ -1,10 +1,9 @@
 # coding:utf-8
-import torch
-import torch.optim as optim
 import os
 from data.dataset_scene import *
-from torchvision import transforms
 from VisionLAN import *
+from mindspore.dataset import transforms
+from mindspore.dataset import vision
 
 global_cfgs = {
     'state': 'Test',
@@ -23,7 +22,7 @@ dataset_cfgs = {
         ],
         'img_height': 64,
         'img_width': 256,
-        'transform': transforms.Compose([transforms.ToTensor()]),
+        'transform': transforms.Compose([vision.ToTensor()]),
         'global_state': 'Train',
     },
     'dataloader_train': {
@@ -40,7 +39,7 @@ dataset_cfgs = {
         ],
         'img_height': 64,
         'img_width': 256,
-        'transform': transforms.Compose([transforms.ToTensor()]),
+        'transform': transforms.Compose([vision.ToTensor()]),
         'global_state': 'Test',
     },
 
@@ -51,7 +50,7 @@ dataset_cfgs = {
         ],
         'img_height': 64,
         'img_width': 256,
-        'transform': transforms.Compose([transforms.ToTensor()]),
+        'transform': transforms.Compose([vision.ToTensor()]),
         'global_state': 'Test',
     },
 
@@ -61,7 +60,7 @@ dataset_cfgs = {
         ],
         'img_height': 64,
         'img_width': 256,
-        'transform': transforms.Compose([transforms.ToTensor()]),
+        'transform': transforms.Compose([vision.ToTensor()]),
         'global_state': 'Test',
     },
 
@@ -71,7 +70,7 @@ dataset_cfgs = {
         ],
         'img_height': 64,
         'img_width': 256,
-        'transform': transforms.Compose([transforms.ToTensor()]),
+        'transform': transforms.Compose([vision.ToTensor()]),
         'global_state': 'Test',
     },
 
@@ -81,7 +80,7 @@ dataset_cfgs = {
         ],
         'img_height': 64,
         'img_width': 256,
-        'transform': transforms.Compose([transforms.ToTensor()]),
+        'transform': transforms.Compose([vision.ToTensor()]),
         'global_state': 'Test',
     },
     'dataset_test_argsSVTP': {
@@ -90,7 +89,7 @@ dataset_cfgs = {
                   ],
         'img_height': 64,
         'img_width': 256,
-        'transform': transforms.Compose([transforms.ToTensor()]),
+        'transform': transforms.Compose([vision.ToTensor()]),
         'global_state': 'Test',
     },
 
@@ -100,7 +99,7 @@ dataset_cfgs = {
                   ],
         'img_height': 64,
         'img_width': 256,
-        'transform': transforms.Compose([transforms.ToTensor()]),
+        'transform': transforms.Compose([vision.ToTensor()]),
         'global_state': 'Test',
     },
 

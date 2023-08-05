@@ -5,9 +5,10 @@ import random
 import cv2
 import numpy as np
 from PIL import Image
-from torchvision import transforms
-from torchvision.transforms import Compose
-
+# from torchvision import transforms
+from mindspore.dataset.vision import RandomColorAdjust
+# from torchvision.transforms import Compose
+from mindspore.dataset.transforms import Compose
 
 def sample_asym(magnitude, size=None):
     return np.random.beta(1, 4, size) * magnitude
@@ -320,9 +321,10 @@ class CVDeterioration(object):
 class CVColorJitter(object):
     def __init__(self, brightness=0.5, contrast=0.5, saturation=0.5, hue=0.1, p=0.5):
         self.p = p
-        self.transforms = transforms.ColorJitter(brightness=brightness, contrast=contrast, 
+        # self.transforms = transforms.ColorJitter(brightness=brightness, contrast=contrast, 
+        #                                          saturation=saturation, hue=hue)
+        self.transforms = RandomColorAdjust(brightness=brightness, contrast=contrast, 
                                                  saturation=saturation, hue=hue)
-
     def __call__(self, img):
         if random.random() < self.p: return self.transforms(img)
         else: return img
