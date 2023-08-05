@@ -1,11 +1,11 @@
 # coding:utf-8
 from __future__ import print_function
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
-from torchvision import transforms
-from torch.utils.data import Dataset, DataLoader
+import mindspore as ms # import torch
+import mindspore.nn as nn # import torch.nn as nn
+import mindspore.ops  # import torch.nn.functional as F
+import mindspore.Parameter # from torch.autograd import Variable
+from mindspore import dataset # from torchvision import transforms # 这里有问题
+import mindspore.dataset.Generator # from torch.utils.data import Dataset, DataLoader
 import datetime
 from utils import *
 import cfgs.cfgs_eval as cfgs
@@ -20,8 +20,10 @@ def flatten_label(target):
         cur_label = target[i].tolist()
         label_flatten += cur_label[:cur_label.index(0) + 1]
         label_length.append(cur_label.index(0) + 1)
-    label_flatten = torch.LongTensor(label_flatten)
-    label_length = torch.IntTensor(label_length)
+    label_flatten = mindspore.Tensor(label_flatten, mindspore.int64)
+    # label_flatten = torch.LongTensor(label_flatten)
+    label_length = mindspore.Tensor(label_length, mindspore.int32)
+    # label_length = torch.IntTensor(label_length)
     return (label_flatten, label_length)
 
 def Train_or_Eval(model, state='Train'):
@@ -33,40 +35,50 @@ def Train_or_Eval(model, state='Train'):
 
 def load_dataset():
     train_data_set = cfgs.dataset_cfgs['dataset_train'](**cfgs.dataset_cfgs['dataset_train_args'])
-    train_loader = DataLoader(train_data_set, **cfgs.dataset_cfgs['dataloader_train'])
+    # train_loader = ms.dataset.GeneratorDataset(train_data_set, **cfgs.dataset_cfgs['dataloader_train'])
+    # train_loader = DataLoader(train_data_set, **cfgs.dataset_cfgs['dataloader_train'])
 
     test_data_all = cfgs.dataset_cfgs['dataset_test'](**cfgs.dataset_cfgs['dataset_test_all'])
-    test_loader_all = DataLoader(test_data_all, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loader_all = ms.dataset.GeneratorDataset(test_data_all, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loader_all = DataLoader(test_data_all, **cfgs.dataset_cfgs['dataloader_test'])
 
     test_data_set = cfgs.dataset_cfgs['dataset_test'](**cfgs.dataset_cfgs['dataset_test_args'])
-    test_loader = DataLoader(test_data_set, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loader = ms.dataset.GeneratorDataset(test_data_set, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loader = DataLoader(test_data_set, **cfgs.dataset_cfgs['dataloader_test'])
 
     test_data_setIC13 = cfgs.dataset_cfgs['dataset_test'](**cfgs.dataset_cfgs['dataset_test_argsIC13'])
-    test_loaderIC13 = DataLoader(test_data_setIC13, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loaderIC13 = ms.dataset.GeneratorDataset(test_data_setIC13, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loaderIC13 = DataLoader(test_data_setIC13, **cfgs.dataset_cfgs['dataloader_test'])
 
     test_data_setIC15 = cfgs.dataset_cfgs['dataset_test'](**cfgs.dataset_cfgs['dataset_test_argsIC15'])
-    test_loaderIC15 = DataLoader(test_data_setIC15, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loaderIC15 = ms.dataset.GeneratorDataset(test_data_setIC15, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loaderIC15 = DataLoader(test_data_setIC15, **cfgs.dataset_cfgs['dataloader_test'])
 
     test_data_setSVT = cfgs.dataset_cfgs['dataset_test'](**cfgs.dataset_cfgs['dataset_test_argsSVT'])
-    test_loaderSVT = DataLoader(test_data_setSVT, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loaderSVT = ms.dataset.GeneratorDataset(test_data_setSVT, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loaderSVT = DataLoader(test_data_setSVT, **cfgs.dataset_cfgs['dataloader_test'])
 
     test_data_setSVTP = cfgs.dataset_cfgs['dataset_test'](**cfgs.dataset_cfgs['dataset_test_argsSVTP'])
-    test_loaderSVTP = DataLoader(test_data_setSVTP, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loaderSVTP = ms.dataset.GeneratorDataset(test_data_setSVTP, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loaderSVTP = DataLoader(test_data_setSVTP, **cfgs.dataset_cfgs['dataloader_test'])
 
     test_data_setCUTE = cfgs.dataset_cfgs['dataset_test'](**cfgs.dataset_cfgs['dataset_test_argsCUTE'])
-    test_loaderCUTE = DataLoader(test_data_setCUTE, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loaderCUTE = ms.dataset.GeneratorDataset(test_data_setCUTE, **cfgs.dataset_cfgs['dataloader_test'])
+    # test_loaderCUTE = DataLoader(test_data_setCUTE, **cfgs.dataset_cfgs['dataloader_test'])
 
     # pdb.set_trace()
-    return (train_loader, test_loader_all, test_loader, test_loaderIC13, test_loaderIC15, test_loaderSVT, test_loaderSVTP, test_loaderCUTE)
+    return (train_data_set, test_data_all, test_data_set, test_data_setIC13, test_data_setIC15, test_data_setSVT, test_data_setSVTP, test_data_setCUTE)
 
 
 def load_network():
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device_target = "Ascend"
+    mindspore.set_context(device_target=device_target)
     model_VL = cfgs.net_cfgs['VisualLAN'](**cfgs.net_cfgs['args'])
     model_VL = model_VL.to(device)
-    model_VL = torch.nn.DataParallel(model_VL)
+    # model_VL = torch.nn.DataParallel(model_VL)
     if cfgs.net_cfgs['init_state_dict'] != None:
-        fe_state_dict_ori = torch.load(cfgs.net_cfgs['init_state_dict'])
+        fe_state_dict_ori = ms.load_checkpoint(cfgs.net_cfgs['init_state_dict'])
+        # fe_state_dict_ori = torch.load(cfgs.net_cfgs['init_state_dict'])
         fe_state_dict = OrderedDict()
         for k, v in fe_state_dict_ori.items():
             # if 'MLM' in k:
@@ -89,10 +101,10 @@ def test(test_loader, model, tools, best_acc, string_name):
         data = sample_batched['image']
         label = sample_batched['label']
         target = tools[0].encode(label)
-        data = data.cuda()
+        data = data.Ascend() # data = data.cuda()
         target = target
         label_flatten, length = tools[1](target)
-        target, label_flatten = target.cuda(), label_flatten.cuda()
+        target, label_flatten = target.cuda(), label_flatten.Ascend() # cuda改为Ascend
         output, out_length = model(data, target, '',  False)
         tools[2].add_iter(output, out_length, length, label)
     best_acc, change = tools[2].show_test(best_acc)
