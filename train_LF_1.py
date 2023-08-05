@@ -1,7 +1,7 @@
 # coding:utf-8
 from __future__ import print_function
-import mindspore as ms#import torch
-import mindspore.nn as nn #import torch.nn as nn
+import mindspore as ms # import torch
+import mindspore.nn as nn # import torch.nn as nn
 from mindspore.dataset import GeneratorDataset #from torch.utils.data import Dataset, DataLoader
 import datetime
 from utils import *
@@ -49,7 +49,8 @@ def load_dataset():
     return train_loader, test_loader
 
 def load_network():
-    device = "GPU" if ms.context.get_context("device_target") == "GPU" else "CPU"
+    device_target = "Ascend"
+    mindspore.set_context(device_target=device_target)
     model_VL = cfgs.net_cfgs['VisualLAN'](**cfgs.net_cfgs['args'])
     model_VL = model_VL.to(device)
     model_VL = ms.parallel.set_algo_parameters(model_VL)# 不知道对不对
@@ -66,8 +67,8 @@ def load_network():
         model_dict_fe = model_VL.state_dict()
         state_dict_fe = {k: v for k, v in fe_state_dict.items() if k in model_dict_fe.keys()}
         model_dict_fe.update(state_dict_fe)
-        #model_VL.load_para_into_net(model_dict_fe, fe_state_dict_ori)
-        model_VL.load_para_into_net(model_VL, model_dict_fe)
+        model_VL.load_param_into_net(model_VL,model_dict_fe)
+        # model_VL.load_state_dict()
     return model_VL
 
 def generate_optimizer(model):
