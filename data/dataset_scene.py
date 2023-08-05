@@ -2,6 +2,7 @@
 import random
 # import torch
 # from torch.utils.data import Dataset
+from mindspore.dataset import GeneratorDataset
 # from torch.utils.data import sampler
 # import torchvision.transforms as transforms
 from mindspore.dataset.transforms import Compose
@@ -33,7 +34,11 @@ def des_orderlabel(imput_lable):
         else:
             imput_lable = imput_lable[:change_id] + imput_lable[change_id + 1:]
     return imput_lable, label_sub, change_id
-class lmdbDataset(Dataset):
+
+
+# https://www.mindspore.cn/docs/zh-CN/r1.10/note/api_mapping/pytorch_diff/GeneratorDataset.html
+# class lmdbDataset(Dataset):
+class lmdbDataset():
     def __init__(self, roots=None, ratio=None, img_height = 32, img_width = 128,
         transform=None, global_state='Test'):
         self.envs = []

@@ -5,7 +5,7 @@ import mindspore
 import mindspore.nn as nn
 import mindspore.ops as ops
 # import torch.nn as nn
-#from torch.utils.data import Dataset, DataLoader
+# from torch.utils.data import Dataset, DataLoader
 import datetime
 from utils import *
 import cfgs.cfgs_LA as cfgs
@@ -55,12 +55,19 @@ def load_dataset():
 
 # 怎么改？
 def load_network():
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") # 选设备
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") # 选设备
+    device_target="Ascend"
+    mindspore.set_context(device_target=device_target)
     model_VL = cfgs.net_cfgs['VisualLAN'](**cfgs.net_cfgs['args'])
-    model_VL = model_VL.to(device)  # 模型加载到设备上
-    model_VL = torch.nn.DataParallel(model_VL)  # 设置并行
+    
+    # model_VL = model_VL.to(device)  # 模型加载到设备上
+    
+    # model_VL = torch.nn.DataParallel(model_VL)  # 设置并行
+    
+    # 后续设置并行吧
+    
     if cfgs.net_cfgs['init_state_dict'] != None:    # 若有训练好的参数模型，则执行下述
-        fe_state_dict_ori = torch.load(cfgs.net_cfgs['init_state_dict'])    #
+        fe_state_dict_ori = mindspore.load_checkpoint(cfgs.net_cfgs['init_state_dict'])    
         fe_state_dict = OrderedDict()
         for k, v in fe_state_dict_ori.items():
             if 'module' not in k:
@@ -68,7 +75,9 @@ def load_network():
             else:
                 k = k.replace('features.module.', 'module.features.')
             fe_state_dict[k] = v
-        model_dict_fe = model_VL.state_dict()   #
+            
+        # model_dict_fe = model_VL.state_dict()
+        model_dict_fe = model_VL.parameters_dict()
         state_dict_fe = {k: v for k, v in fe_state_dict.items() if k in model_dict_fe.keys()}
         model_dict_fe.update(state_dict_fe) #？
         #model_VL.load_para_into_net(model_dict_fe, fe_state_dict_ori) #
@@ -84,7 +93,6 @@ def generate_optimizer(model):
         return out, scheduler
     else:
         id_mlm = id(model.module.MLM_VRM.MLM.parameters())  # id()函数实际上就是指针的意思
-        # 下面这句会有问题吗？
         id_pre_mlm = id(model.module.MLM_VRM.Prediction.pp_share.parameters()) + id(model.module.MLM_VRM.Prediction.w_share.parameters())
         id_total = id_mlm + id_pre_mlm
         # out = torch.optim.Adam([{'params': filter(lambda p: id(p) == id_total, model.parameters()), 'lr': cfgs.optimizer_cfgs['optimizer_0_args']['lr']},
@@ -106,10 +114,10 @@ def test(test_loader, model, tools, best_acc):
         data = sample_batched['image']
         label = sample_batched['label']
         target = tools[0].encode(label)
-        #data = data.cuda()
+        data = data.cuda()
         target = target
         label_flatten, length = tools[1](target)
-        #target, label_flatten = target.cuda(), label_flatten.cuda()
+        target, label_flatten = target.cuda(), label_flatten.cuda()
         output, out_length = model(data, target, '', False)
         tools[2].add_iter(output, out_length, length, label)
     best_acc, change = tools[2].show_test(best_acc)
@@ -117,7 +125,7 @@ def test(test_loader, model, tools, best_acc):
     return best_acc, change
 
 if __name__ == '__main__':
-    model = load_network()  # 注意到函数里去看
+    model = load_network()
     optimizer, optimizer_scheduler = generate_optimizer(model)
     # criterion_CE = nn.CrossEntropyLoss().cuda()   # .cuda是为了将Tenosr 拷贝到 cuda 内存，而mindspore初始device设置好后，网络和tensor都自动拷贝到device上
     criterion_CE = nn.SoftmaxCrossEntropyWithLogits()
@@ -163,12 +171,12 @@ if __name__ == '__main__':
             target_sub = encdec.encode(label_sub)
             Train_or_Eval(model, 'Train')
             # 后续的.cuda是不是都可以省略
-            #data = data.cuda()
+            data = data.cuda()
             label_flatten, length = flatten_label(target)
             label_flatten_res, length_res = flatten_label(target_res)
             label_flatten_sub, length_sub = flatten_label(target_sub)
-            #target, label_flatten, target_res, target_sub, label_flatten_res = target.cuda(), label_flatten.cuda(), target_res.cuda(), target_sub.cuda(), label_flatten_res.cuda()
-            #label_flatten_sub, label_id = label_flatten_sub.cuda(), label_id.cuda()
+            target, label_flatten, target_res, target_sub, label_flatten_res = target.cuda(), label_flatten.cuda(), target_res.cuda(), target_sub.cuda(), label_flatten_res.cuda()
+            label_flatten_sub, label_id = label_flatten_sub.cuda(), label_id.cuda()
             # prediction
             text_pre, text_rem, text_mas, att_mask_sub = model(data, label_id, cfgs.global_cfgs['step'])
             # loss_calculation
@@ -196,7 +204,7 @@ if __name__ == '__main__':
             loss_show += loss
             # optimize
             Zero_Grad(model)
-            #loss.backward()
+            loss.backward()
             # 梯度裁剪，防止梯度爆炸问题，三个参数分别为：parameters: 网络参数，max_norm: 该组网络参数梯度的范数上线，norm_type: 范数类型
             # nn.utils.clip_grad_norm_(model.parameters(), 20, 2) 
             # 这玩意mindspore好像没有

@@ -1,7 +1,7 @@
 # coding:utf-8
 from __future__ import print_function
-import mindspore as ms#import torch
-import mindspore.nn as nn #import torch.nn as nn
+import mindspore as ms # import torch
+import mindspore.nn as nn # import torch.nn as nn
 from mindspore.dataset import GeneratorDataset #from torch.utils.data import Dataset, DataLoader
 import datetime
 from utils import *
@@ -49,7 +49,8 @@ def load_dataset():
     return train_loader, test_loader
 
 def load_network():
-    device = "GPU" if ms.context.get_context("device_target") == "GPU" else "CPU"
+    device_target = "Ascend"
+    mindspore.set_context(device_target=device_target)
     model_VL = cfgs.net_cfgs['VisualLAN'](**cfgs.net_cfgs['args'])
     model_VL = model_VL.to(device)
     model_VL = ms.parallel.set_algo_parameters(model_VL)# 不知道对不对
@@ -88,11 +89,9 @@ def generate_optimizer(model):
         return out, scheduler
 
 def _flatten(sources, lengths):
-    concat_op = ms.ops.Concat()
-    cast_op = ms.ops.Cast()
-    output = concat_op((cast_op(t[:l] for t, ms.float32), l in zip(sources, lengths)))# 照改有报错，怎么改
-    return output
     # return torch.cat([t[:l] for t, l in zip(sources, lengths)])
+    concat_op = ops.Concat
+    return concat_op([t[:l] for t, l in zip(sources, lengths)])
 
 def test(test_loader, model, tools, best_acc):
     Train_or_Eval(model, 'Eval')

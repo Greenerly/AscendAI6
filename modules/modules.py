@@ -3,7 +3,7 @@ import mindspore.nn as nn
 import mindspore
 import mindspore.ops as F# import torch.nn.functional as F
 import numpy as np
-from mindspore.parameter import Parameter# 注意大小写 from torch.nn.parameter import Parameter
+from mindspore import Parameter    # 注意大小写 from torch.nn.parameter import Parameter
 
 class PositionalEncoding(nn.Cell):
     def __init__(self, d_hid, n_position=200):
@@ -78,7 +78,7 @@ class MultiHeadAttention(nn.Cell):
         output = self.layer_norm(output + residual)
         return output, attn
 
-class PositionwiseFeedForward(nn.Module):
+class PositionwiseFeedForward(nn.Cell):# gai!
     ''' A two-feed-forward-layer module '''
     def __init__(self, d_in, d_hid, dropout=0.1):
         super(PositionwiseFeedForward, self).__init__()
@@ -146,7 +146,7 @@ class Transforme_Encoder_light(nn.Cell):
         enc_output = self.layer_norm(enc_output)
         return enc_output,
 
-class PP_layer(nn.Module):
+class PP_layer(nn.Cell):#gai!
     def __init__(self,  n_dim=512, N_max_character=25, n_position=256):
 
         super(PP_layer, self).__init__()
