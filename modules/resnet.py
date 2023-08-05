@@ -1,7 +1,7 @@
 import mindspore.nn as nn# import torch.nn as nn
 import math
 import mindspore.dataset
-import torch.utils.model_zoo as model_zoo# 这一句怎么改？？查资料！！！但是这个module在这个py文件没有用过
+# import torch.utils.model_zoo as model_zoo# 这一句怎么改？？查资料！！！但是这个module在这个py文件没有用过
 import mindspore.ops as F# import torch.nn.functional as F
 
 def conv1x1(in_planes,out_planes,stride=1):

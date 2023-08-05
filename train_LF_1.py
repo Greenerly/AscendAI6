@@ -88,11 +88,9 @@ def generate_optimizer(model):
         return out, scheduler
 
 def _flatten(sources, lengths):
-    concat_op = ms.ops.Concat()
-    cast_op = ms.ops.Cast()
-    output = concat_op((cast_op(t[:l] for t, ms.float32), l in zip(sources, lengths)))# 照改有报错，怎么改
-    return output
     # return torch.cat([t[:l] for t, l in zip(sources, lengths)])
+    concat_op = ops.Concat
+    return concat_op([t[:l] for t, l in zip(sources, lengths)])
 
 def test(test_loader, model, tools, best_acc):
     Train_or_Eval(model, 'Eval')
