@@ -61,3 +61,4 @@ if __name__ == '__main__':# gaile123
         with open(output_txt,'a') as f:
             f.write(img_name+':'+pre_string[0]+'\n')
 
+            
