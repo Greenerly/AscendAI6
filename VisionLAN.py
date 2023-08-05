@@ -12,7 +12,7 @@ import mindspore.nn as nn
 import mindspore.ops as ops
 from mindspore import Tensor
 
-class MLM(nn.Module):
+class MLM(nn.Cell):
     '''
     Architecture of MLM
     '''
@@ -66,7 +66,7 @@ def trans_1d_2d(x):
     x = ops.Transpose(x, (0, 1, 3, 2))      #修改完成
     return x
 
-class MLM_VRM(nn.Module):
+class MLM_VRM(nn.Cell):
     '''
     MLM+VRM, MLM is only used in training.
     ratio controls the occluded number in a batch.
@@ -168,7 +168,7 @@ class MLM_VRM(nn.Module):
             return output, out_length
 
 
-class VisionLAN(nn.Module):
+class VisionLAN(nn.Cell):
     '''
     Architecture of VisionLAN
     input
