@@ -41,20 +41,19 @@ def Updata_Parameters(optimizers, frozen):
 
 def load_dataset():
     train_data_set = cfgs.dataset_cfgs['dataset_train'](**cfgs.dataset_cfgs['dataset_train_args'])
-    train_loader = GeneratorDataset(train_data_set, **cfgs.dataset_cfgs['dataloader_train'])# 不知道对不对
     # train_loader = DataLoader(train_data_set, **cfgs.dataset_cfgs['dataloader_train'])
     test_data_set = cfgs.dataset_cfgs['dataset_test'](**cfgs.dataset_cfgs['dataset_test_args'])
-    test_loader = GeneratorDataset(test_data_set, **cfgs.dataset_cfgs['dataloader_test'])# 不知道对不对
     # test_loader = DataLoader(test_data_set, **cfgs.dataset_cfgs['dataloader_test'])
-    return train_loader, test_loader
+    return train_data_set, test_data_set
 
 
 def load_network():
-    device = "GPU" if ms.context.get_context("device_target") == "GPU" else "CPU"
+    device_target = "Ascend"
+    mindspore.set_context(device_target = divice_target)
     # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model_VL = cfgs.net_cfgs['VisualLAN'](**cfgs.net_cfgs['args'])
     model_VL = model_VL.to(device)
-    model_VL = ms.parallel.set_algo_parameters(model_VL)
+    # model_VL = ms.parallel.set_algo_parameters(model_VL)      #锦上添花
     # model_VL = torch.nn.DataParallel(model_VL)
 
     if cfgs.net_cfgs['init_state_dict'] != None:
@@ -70,7 +69,7 @@ def load_network():
         model_dict_fe = model_VL.state_dict()
         state_dict_fe = {k: v for k, v in fe_state_dict.items() if k in model_dict_fe.keys()}
         model_dict_fe.update(state_dict_fe)
-        model_VL.load_state_dict(model_dict_fe)
+        model_VL.load_para_into_net(model_VL, model_dict_fe)
     return model_VL
 
 def generate_optimizer(model):
@@ -104,10 +103,10 @@ def test(test_loader, model, tools, best_acc):
         data = sample_batched['image']
         label = sample_batched['label']
         target = tools[0].encode(label)
-        data = data.cuda()# 用不用改
+        #data = data.cuda()# 用不用改
         target = target
         label_flatten, length = tools[1](target)
-        target, label_flatten = target.cuda(), label_flatten.cuda()# 用不用改
+        #target, label_flatten = target.cuda(), label_flatten.cuda()# 用不用改
         output, out_length = model(data, target, '', False)
         tools[2].add_iter(output, out_length, length, label)
     best_acc, change = tools[2].show_test(best_acc)
@@ -155,12 +154,12 @@ if __name__ == '__main__':
             target_res = encdec.encode(label_res)
             target_sub = encdec.encode(label_sub)
             Train_or_Eval(model, 'Train')
-            data = data.cuda()
+            #data = data.cuda()
             label_flatten, length = flatten_label(target)
             label_flatten_res, length_res = flatten_label(target_res)
             label_flatten_sub, length_sub = flatten_label(target_sub)
-            target, label_flatten, target_res, target_sub, label_flatten_res = target.cuda(), label_flatten.cuda(), target_res.cuda(), target_sub.cuda(), label_flatten_res.cuda()
-            label_flatten_sub, label_id = label_flatten_sub.cuda(), label_id.cuda()
+            #target, label_flatten, target_res, target_sub, label_flatten_res = target.cuda(), label_flatten.cuda(), target_res.cuda(), target_sub.cuda(), label_flatten_res.cuda()
+            #label_flatten_sub, label_id = label_flatten_sub.cuda(), label_id.cuda()  #指定GPU的意思，可以先不管
             # prediction
             text_pre, text_rem, text_mas, att_mask_sub = model(data, label_id, cfgs.global_cfgs['step'])
             # loss_calculation
@@ -187,7 +186,8 @@ if __name__ == '__main__':
             loss_show += loss
             # optimize
             Zero_Grad(model)
-            loss.backward()
+            #loss.backward()
+            #loss.GradOperation()
             nn.utils.clip_grad_norm_(model.parameters(), 20, 2)
             optimizer.step()
             # display

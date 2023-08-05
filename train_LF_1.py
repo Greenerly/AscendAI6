@@ -66,7 +66,8 @@ def load_network():
         model_dict_fe = model_VL.state_dict()
         state_dict_fe = {k: v for k, v in fe_state_dict.items() if k in model_dict_fe.keys()}
         model_dict_fe.update(state_dict_fe)
-        model_VL.load_state_dict(model_dict_fe)
+        #model_VL.load_para_into_net(model_dict_fe, fe_state_dict_ori)
+        model_VL.load_para_into_net(model_VL, model_dict_fe)
     return model_VL
 
 def generate_optimizer(model):
@@ -99,10 +100,10 @@ def test(test_loader, model, tools, best_acc):
         data = sample_batched['image']
         label = sample_batched['label']
         target = tools[0].encode(label)
-        data = data.cuda()# 用不用改
+        #data = data.cuda()# 用不用改
         target = target
         label_flatten, length = tools[1](target)
-        target, label_flatten = target.cuda(), label_flatten.cuda()# 用不用改
+        #target, label_flatten = target.cuda(), label_flatten.cuda()# 用不用改
         output, out_length = model(data, target, '', False)
         tools[2].add_iter(output, out_length, length, label)
     best_acc, change = tools[2].show_test(best_acc)
@@ -150,12 +151,12 @@ if __name__ == '__main__':
             target_res = encdec.encode(label_res)
             target_sub = encdec.encode(label_sub)
             Train_or_Eval(model, 'Train')
-            data = data.cuda()
+            #data = data.cuda()
             label_flatten, length = flatten_label(target)
             label_flatten_res, length_res = flatten_label(target_res)
             label_flatten_sub, length_sub = flatten_label(target_sub)
-            target, label_flatten, target_res, target_sub, label_flatten_res = target.cuda(), label_flatten.cuda(), target_res.cuda(), target_sub.cuda(), label_flatten_res.cuda()
-            label_flatten_sub, label_id = label_flatten_sub.cuda(), label_id.cuda()
+            #target, label_flatten, target_res, target_sub, label_flatten_res = target.cuda(), label_flatten.cuda(), target_res.cuda(), target_sub.cuda(), label_flatten_res.cuda()
+            #label_flatten_sub, label_id = label_flatten_sub.cuda(), label_id.cuda()
             # prediction
             text_pre, text_rem, text_mas, att_mask_sub = model(data, label_id, cfgs.global_cfgs['step'])
             # loss_calculation
@@ -183,7 +184,7 @@ if __name__ == '__main__':
             loss_show += loss
             # optimize
             Zero_Grad(model)
-            loss.backward()
+            #loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 20, 2)
             optimizer.step()
             # display
