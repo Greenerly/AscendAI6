@@ -1,11 +1,11 @@
-import torch
-import torch.nn as nn
-from torch.nn import init
-import torch.nn.functional as F
-from torch.autograd import Variable
-from torch.nn.parameter import Parameter
+#import torch
+#import torch.nn as nn
+#from torch.nn import init
+#import torch.nn.functional as F
+#from torch.autograd import Variable
+#from torch.nn.parameter import Parameter
 from modules.modules import Transforme_Encoder, Prediction, Transforme_Encoder_light
-import torchvision
+#import torchvision
 import modules.resnet as resnet
 
 import mindspore.nn as nn
@@ -149,7 +149,7 @@ class MLM_VRM(nn.Module):
                 out_res[now_step] = tmp_result
                 #tmp_result = tmp_result.topk(1)[1].squeeze(dim=1)
                 tmp_topk_res = ops.TopK(sorted=True)(tmp_result, 1)[1]
-                tmp_result = tmp_topk_res.squeeze(dim=1)        #已修改 可能有问题 torch的这个函数有dim参数可以选择具体删除
+                tmp_result = tmp_topk_res.squeeze(dim=1)        #已修改 ！！！！可能有问题 torch的这个函数有dim参数可以选择具体删除
                 for j in range(b):
                     if out_length[j] == 0 and tmp_result[j] == 0:
                         out_length[j] = now_step + 1

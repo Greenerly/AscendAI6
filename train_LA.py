@@ -5,7 +5,7 @@ import mindspore
 import mindspore.nn as nn
 import mindspore.ops as ops
 # import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+#from torch.utils.data import Dataset, DataLoader
 import datetime
 from utils import *
 import cfgs.cfgs_LA as cfgs
@@ -71,7 +71,8 @@ def load_network():
         model_dict_fe = model_VL.state_dict()   #
         state_dict_fe = {k: v for k, v in fe_state_dict.items() if k in model_dict_fe.keys()}
         model_dict_fe.update(state_dict_fe) #？
-        model_VL.load_state_dict(model_dict_fe) #
+        #model_VL.load_para_into_net(model_dict_fe, fe_state_dict_ori) #
+        model_VL.load_para_into_net(model_VL, model_dict_fe)
     return model_VL
 
 
@@ -105,10 +106,10 @@ def test(test_loader, model, tools, best_acc):
         data = sample_batched['image']
         label = sample_batched['label']
         target = tools[0].encode(label)
-        data = data.cuda()
+        #data = data.cuda()
         target = target
         label_flatten, length = tools[1](target)
-        target, label_flatten = target.cuda(), label_flatten.cuda()
+        #target, label_flatten = target.cuda(), label_flatten.cuda()
         output, out_length = model(data, target, '', False)
         tools[2].add_iter(output, out_length, length, label)
     best_acc, change = tools[2].show_test(best_acc)
@@ -162,12 +163,12 @@ if __name__ == '__main__':
             target_sub = encdec.encode(label_sub)
             Train_or_Eval(model, 'Train')
             # 后续的.cuda是不是都可以省略
-            data = data.cuda()
+            #data = data.cuda()
             label_flatten, length = flatten_label(target)
             label_flatten_res, length_res = flatten_label(target_res)
             label_flatten_sub, length_sub = flatten_label(target_sub)
-            target, label_flatten, target_res, target_sub, label_flatten_res = target.cuda(), label_flatten.cuda(), target_res.cuda(), target_sub.cuda(), label_flatten_res.cuda()
-            label_flatten_sub, label_id = label_flatten_sub.cuda(), label_id.cuda()
+            #target, label_flatten, target_res, target_sub, label_flatten_res = target.cuda(), label_flatten.cuda(), target_res.cuda(), target_sub.cuda(), label_flatten_res.cuda()
+            #label_flatten_sub, label_id = label_flatten_sub.cuda(), label_id.cuda()
             # prediction
             text_pre, text_rem, text_mas, att_mask_sub = model(data, label_id, cfgs.global_cfgs['step'])
             # loss_calculation
@@ -195,7 +196,7 @@ if __name__ == '__main__':
             loss_show += loss
             # optimize
             Zero_Grad(model)
-            loss.backward()
+            #loss.backward()
             # 梯度裁剪，防止梯度爆炸问题，三个参数分别为：parameters: 网络参数，max_norm: 该组网络参数梯度的范数上线，norm_type: 范数类型
             # nn.utils.clip_grad_norm_(model.parameters(), 20, 2) 
             # 这玩意mindspore好像没有
