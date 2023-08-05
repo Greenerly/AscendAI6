@@ -70,7 +70,8 @@ def load_network():
         model_dict_fe = model_VL.state_dict()
         state_dict_fe = {k: v for k, v in fe_state_dict.items() if k in model_dict_fe.keys()}
         model_dict_fe.update(state_dict_fe)
-        model_VL.load_state_dict(model_dict_fe)
+        model_VL.load_param_into_net(model_VL,model_dict_fe)
+        # model_VL.load_state_dict(model_dict_fe)
     return model_VL
 
 def generate_optimizer(model):
