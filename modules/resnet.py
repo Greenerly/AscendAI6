@@ -1,7 +1,9 @@
 import mindspore.nn as nn# import torch.nn as nn
 import math
 import mindspore.dataset
+
 # import torch.utils.model_zoo as model_zoo
+
 import mindspore.ops as F# import torch.nn.functional as F
 
 def conv1x1(in_planes,out_planes,stride=1):
@@ -13,6 +15,7 @@ def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                      padding=0, has_bias=True)
+
 # def conv3x3(in_planes, out_planes, stride=1):
 #     "3x3 convolution with padding"
 #     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
@@ -29,6 +32,7 @@ class BasicBlock(nn.Cell):# class BasicBlock(nn.Module)
         self.bn1 = nn.BatchNorm2d(planes, momentum=0.9)# batch normalization使得一批(Batch)的feature map满足均值为0，方差为1的分布规律
         # self.relu = nn.ReLU(inplace=True)
         self.relu = nn.ReLU()
+
         self.conv2 = conv3x3(planes, planes, stride)
         self.bn2 = nn.BatchNorm2d(planes, momentum=0.9)
         self.downsample = downsample
@@ -55,12 +59,14 @@ class ResNet(nn.Cell):# class ResNet(nn.Module)
     def __init__(self, block, layers, strides, compress_layer=True):
         self.inplanes = 32
         super(ResNet, self).__init__()
+
         # padding=1会有如下报错：For 'Conv2D', the 'pad' must be zero when 'pad_mode' is not 'pad', but got 'pad': 1 and 'pad_mode': same.
         self.conv1_new = nn.Conv2d(3, 32, kernel_size=3, stride=strides[0], padding=0,
                                has_bias=True)
         self.bn1 = nn.BatchNorm2d(32, momentum=0.9)# 也可以不写
         # self.relu = nn.ReLU(inplace=True)
         self.relu = nn.ReLU()
+
 
         self.layer1 = self._make_layer(block, 32, layers[0],stride=strides[1])
         self.layer2 = self._make_layer(block, 64, layers[1], stride=strides[2])

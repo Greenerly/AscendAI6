@@ -17,10 +17,11 @@ class PositionalEncoding(nn.Cell):
         sinusoid_table = np.array([get_position_angle_vec(pos_i) for pos_i in range(n_position)])
         sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2])  # dim 2i
         sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])  # dim 2i+1
-        
+
         expand_dims = F.ExpandDims()
         return expand_dims(mindspore.Tensor(sinusoid_table), 0)
         # return mindspore.Tensor(sinusoid_table).unsqueeze(0)
+
     def forward(self, x):
         return x + self.pos_table[:, :x.size(1)].clone().detach()
 
@@ -53,7 +54,7 @@ class MultiHeadAttention(nn.Cell):
         self.w_qs = nn.Dense(d_model, n_head * d_k)
         self.w_ks = nn.Dense(d_model, n_head * d_k)
         self.w_vs = nn.Dense(d_model, n_head * d_v)
-        
+
         # mindspore.common.initializer.Normal(self.w_qs.weight, sigma=np.sqrt(2.0 / (d_model + d_k)), mean=0)
         # mindspore.common.initializer.Normal(self.w_ks.weight, sigma=np.sqrt(2.0 / (d_model + d_k)), mean=0)
         # mindspore.common.initializer.Normal(self.w_vs.weight, sigma=np.sqrt(2.0 / (d_model + d_v)), mean=0)
@@ -62,7 +63,7 @@ class MultiHeadAttention(nn.Cell):
         self.w_vs.weight = Parameter(default_input = mindspore.common.initializer.Normal(sigma=np.sqrt(2.0 / (d_model + d_v)), mean=0))
         # 这里参数初始化还是有问题
         
-        
+
         self.attention = ScaledDotProductAttention(temperature=np.power(d_k, 0.5))
         self.layer_norm = nn.LayerNorm(d_model)# 不用改
         self.fc = nn.Dense(n_head * d_v, d_model)

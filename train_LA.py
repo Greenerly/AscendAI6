@@ -5,7 +5,7 @@ import mindspore
 import mindspore.nn as nn
 import mindspore.ops as ops
 # import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+# from torch.utils.data import Dataset, DataLoader
 import datetime
 from utils import *
 import cfgs.cfgs_LA as cfgs
@@ -55,12 +55,19 @@ def load_dataset():
 
 # 怎么改？
 def load_network():
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") # 选设备
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") # 选设备
+    device_target="Ascend"
+    mindspore.set_context(device_target=device_target)
     model_VL = cfgs.net_cfgs['VisualLAN'](**cfgs.net_cfgs['args'])
-    model_VL = model_VL.to(device)  # 模型加载到设备上
-    model_VL = torch.nn.DataParallel(model_VL)  # 设置并行
+    
+    # model_VL = model_VL.to(device)  # 模型加载到设备上
+    
+    # model_VL = torch.nn.DataParallel(model_VL)  # 设置并行
+    
+    # 后续设置并行吧
+    
     if cfgs.net_cfgs['init_state_dict'] != None:    # 若有训练好的参数模型，则执行下述
-        fe_state_dict_ori = torch.load(cfgs.net_cfgs['init_state_dict'])    #
+        fe_state_dict_ori = mindspore.load_checkpoint(cfgs.net_cfgs['init_state_dict'])    
         fe_state_dict = OrderedDict()
         for k, v in fe_state_dict_ori.items():
             if 'module' not in k:
@@ -68,10 +75,13 @@ def load_network():
             else:
                 k = k.replace('features.module.', 'module.features.')
             fe_state_dict[k] = v
-        model_dict_fe = model_VL.state_dict()   #
+            
+        # model_dict_fe = model_VL.state_dict()
+        model_dict_fe = model_VL.parameters_dict()
         state_dict_fe = {k: v for k, v in fe_state_dict.items() if k in model_dict_fe.keys()}
         model_dict_fe.update(state_dict_fe) #？
-        model_VL.load_state_dict(model_dict_fe) #
+        #model_VL.load_para_into_net(model_dict_fe, fe_state_dict_ori) #
+        model_VL.load_param_into_net(model_VL, model_dict_fe)
     return model_VL
 
 
@@ -83,7 +93,6 @@ def generate_optimizer(model):
         return out, scheduler
     else:
         id_mlm = id(model.module.MLM_VRM.MLM.parameters())  # id()函数实际上就是指针的意思
-        # 下面这句会有问题吗？
         id_pre_mlm = id(model.module.MLM_VRM.Prediction.pp_share.parameters()) + id(model.module.MLM_VRM.Prediction.w_share.parameters())
         id_total = id_mlm + id_pre_mlm
         # out = torch.optim.Adam([{'params': filter(lambda p: id(p) == id_total, model.parameters()), 'lr': cfgs.optimizer_cfgs['optimizer_0_args']['lr']},
@@ -116,7 +125,7 @@ def test(test_loader, model, tools, best_acc):
     return best_acc, change
 
 if __name__ == '__main__':
-    model = load_network()  # 注意到函数里去看
+    model = load_network()
     optimizer, optimizer_scheduler = generate_optimizer(model)
     # criterion_CE = nn.CrossEntropyLoss().cuda()   # .cuda是为了将Tenosr 拷贝到 cuda 内存，而mindspore初始device设置好后，网络和tensor都自动拷贝到device上
     criterion_CE = nn.SoftmaxCrossEntropyWithLogits()
