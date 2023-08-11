@@ -1,14 +1,15 @@
 # coding:utf-8
 import mindspore.nn as nn
 import mindspore
-import mindspore.ops as F# import torch.nn.functional as F
+import mindspore.ops as F  # import torch.nn.functional as F
 import numpy as np
 from mindspore import Parameter    # 注意大小写 from torch.nn.parameter import Parameter
 
 class PositionalEncoding(nn.Cell):
     def __init__(self, d_hid, n_position=200):
         super(PositionalEncoding, self).__init__()
-        self.register_buffer('pos_table', self._get_sinusoid_encoding_table(n_position, d_hid))
+        # self.register_buffer('pos_table', self._get_sinusoid_encoding_table(n_position, d_hid))
+        self.pos_table = mindspore.Parameter(default_input = self._get_sinusoid_encoding_table(n_position, d_hid), requires_grad=False)
     def _get_sinusoid_encoding_table(self, n_position, d_hid):
         ''' Sinusoid position encoding table '''
         def get_position_angle_vec(position):
@@ -16,7 +17,11 @@ class PositionalEncoding(nn.Cell):
         sinusoid_table = np.array([get_position_angle_vec(pos_i) for pos_i in range(n_position)])
         sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2])  # dim 2i
         sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])  # dim 2i+1
-        return mindspore.Tensor(sinusoid_table).unsqueeze(0)
+
+        expand_dims = F.ExpandDims()
+        return expand_dims(mindspore.Tensor(sinusoid_table), 0)
+        # return mindspore.Tensor(sinusoid_table).unsqueeze(0)
+
     def forward(self, x):
         return x + self.pos_table[:, :x.size(1)].clone().detach()
 
@@ -49,9 +54,16 @@ class MultiHeadAttention(nn.Cell):
         self.w_qs = nn.Dense(d_model, n_head * d_k)
         self.w_ks = nn.Dense(d_model, n_head * d_k)
         self.w_vs = nn.Dense(d_model, n_head * d_v)
-        mindspore.commmon.initializer.Normal(self.w_qs.weight, std=np.sqrt(2.0 / (d_model + d_k)), mean=0)
-        mindspore.commmon.initializer.Normal(self.w_ks.weight, std=np.sqrt(2.0 / (d_model + d_k)), mean=0)
-        mindspore.commmon.initializer.Normal(self.w_vs.weight, std=np.sqrt(2.0 / (d_model + d_v)), mean=0)
+
+        # mindspore.common.initializer.Normal(self.w_qs.weight, sigma=np.sqrt(2.0 / (d_model + d_k)), mean=0)
+        # mindspore.common.initializer.Normal(self.w_ks.weight, sigma=np.sqrt(2.0 / (d_model + d_k)), mean=0)
+        # mindspore.common.initializer.Normal(self.w_vs.weight, sigma=np.sqrt(2.0 / (d_model + d_v)), mean=0)
+        self.w_qs.weight = Parameter(default_input = mindspore.common.initializer.Normal(sigma=np.sqrt(2.0 / (d_model + d_k)), mean=0))
+        self.w_ks.weight = Parameter(default_input = mindspore.common.initializer.Normal(sigma=np.sqrt(2.0 / (d_model + d_k)), mean=0))
+        self.w_vs.weight = Parameter(default_input = mindspore.common.initializer.Normal(sigma=np.sqrt(2.0 / (d_model + d_v)), mean=0))
+        # 这里参数初始化还是有问题
+        
+
         self.attention = ScaledDotProductAttention(temperature=np.power(d_k, 0.5))
         self.layer_norm = nn.LayerNorm(d_model)# 不用改
         self.fc = nn.Dense(n_head * d_v, d_model)
@@ -114,7 +126,9 @@ class Transforme_Encoder(nn.Cell):
             d_model=512, d_inner=2048, dropout=0.1, n_position=256):
         super(Transforme_Encoder,self).__init__()
         self.position_enc = PositionalEncoding(d_word_vec, n_position=n_position)
-        self.dropout = nn.Dropout(p=dropout)
+        # pytorch中，p – probability of an element to be zeroed
+        # mindspore中，mindspore.nn.Dropout(keep_prob=0.5, dtype=mstype.float32)
+        self.dropout = nn.Dropout(keep_prob=1 - dropout)
         self.layer_stack = nn.CellList([
             EncoderLayer(d_model, d_inner, n_head, d_k, d_v, dropout=dropout)
             for _ in range(n_layers)])
